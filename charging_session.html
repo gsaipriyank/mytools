@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Charge Timer</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    padding: 0 0 3rem 0; /* bottom padding for footer */
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+    text-align: left;
+    transform: scale(1); /* default scale */
+    transform-origin: top center;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .label {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6A6A6A;
+    text-transform: uppercase;
+  }
+
+  .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #222;
+    margin-top: 0.25rem;
+  }
+
+  #status {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #3B6EFF; /* blue initially */
+    padding: 0.75rem 0;
+    text-align: center;
+    border-radius: 12px;
+    background: #E8EEFF;
+    margin-bottom: 1rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: #E0E0E0;
+    margin: 1rem 0;
+  }
+
+.footer {
+  margin-top: 1rem;
+  color: #777;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.footer img {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Charging Session</h2>
+
+  <div id="status">Plug in your charger</div>
+
+  <div class="label">Battery at Start</div>
+  <div id="startPercent" class="value">-</div>
+
+  <div class="label">Battery at End</div>
+  <div id="endPercent" class="value">-</div>
+
+  <div class="label">Charging Duration</div>
+  <div id="timeTaken" class="value">-</div>
+
+  <div class="label">Battery Gained</div>
+  <div id="percentGain" class="value">-</div>
+
+  <div class="divider"></div>
+</div>
+
+<div class="footer">Made with <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt="heart" /> by Gadepalli Saipriyank</div>
+
+<script>
+let startTime = null;
+let startLevel = null;
+let locked = false;
+
+navigator.getBattery().then(function(battery) {
+
+  function handleChargingChange() {
+    if (locked) return;
+
+    if (battery.charging) {
+      startTime = Date.now();
+      startLevel = Math.round(battery.level * 100);
+
+      document.getElementById("status").innerText = "Charging Started";
+      document.getElementById("status").style.background = "#E6FFEA";
+      document.getElementById("status").style.color = "#2ECC71";
+
+      document.getElementById("startPercent").innerText = startLevel + "%";
+      document.getElementById("endPercent").innerText = "-";
+      document.getElementById("timeTaken").innerText = "-";
+      document.getElementById("percentGain").innerText = "-";
+    } else {
+      if (startTime !== null && !locked) {
+        let endTime = Date.now();
+        let endLevel = Math.round(battery.level * 100);
+
+        let diffMinutes = Math.floor((endTime - startTime) / 60000);
+        let percentGain = endLevel - startLevel;
+
+        document.getElementById("status").innerText = "Charging Stopped";
+        document.getElementById("status").style.background = "#FFECEC";
+        document.getElementById("status").style.color = "#C23131";
+
+        document.getElementById("endPercent").innerText = endLevel + "%";
+        document.getElementById("timeTaken").innerText = diffMinutes + " min";
+        document.getElementById("percentGain").innerText = percentGain + "%";
+      }
+    }
+  }
+
+  setInterval(() => {
+    if (locked || startTime === null) return;
+
+    if (battery.level >= 1) {
+      locked = true;
+
+      let endTime = Date.now();
+      let endLevel = 100;
+      let diffMinutes = startTime ? Math.floor((endTime - startTime) / 60000) : 0;
+      let percentGain = startLevel !== null ? endLevel - startLevel : 0;
+
+      document.getElementById("status").innerText = "Battery Full";
+      document.getElementById("status").style.background = "#E6FFEA";
+      document.getElementById("status").style.color = "#2ECC71";
+
+      document.getElementById("endPercent").innerText = endLevel + "%";
+      document.getElementById("timeTaken").innerText = diffMinutes + " min";
+      document.getElementById("percentGain").innerText = percentGain + "%";
+
+      let audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
+      audio.volume = 0.2;
+      audio.play();
+    }
+  }, 1000);
+
+  battery.addEventListener("chargingchange", handleChargingChange);
+});
+
+
+
+</script>
+
+</body>
+</html>

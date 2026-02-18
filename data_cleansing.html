@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSV Cleaner</title>
+
+<style>
+* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { margin:0; padding:2rem; background:#f9f9f9; display:flex; flex-direction:column; align-items:center; min-height:100vh;}
+.container { background:#fff; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); max-width:700px; width:100%; margin-bottom:20px;}
+h2 { text-align:center; margin-bottom:1rem;}
+input[type="file"] { margin-top:10px; }
+button { padding:10px 16px; border:none; border-radius:8px; background:#3B6EFF; color:white; cursor:pointer; margin-top:15px; width:100%; font-size:16px;}
+button:hover { opacity:0.9; }
+.footer { margin-top:1rem; color:#777; font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; }
+.footer img { width:18px; height:18px; vertical-align:middle; }
+.issue-list { margin-top:10px; padding-left:20px; }
+.issue-list li { margin-bottom:4px; }
+.hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>CSV Data Cleaner</h2>
+
+  <label>Upload CSV File</label>
+  <input type="file" id="csvFile" accept=".csv">
+
+  <button onclick="processCSV()">Process CSV</button>
+
+  <div id="issuesSection" class="hidden"></div>
+  <button id="downloadBtn" class="hidden" onclick="downloadCleanCSV()">Download Clean CSV</button>
+</div>
+
+<div class="footer">
+  Made with 
+  <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt="heart" />
+  by Gadepalli Saipriyank
+</div>
+
+<script>
+// Global variables
+let originalData = [];
+let headers = [];
+let cleanData = [];
+
+// Parse CSV
+function parseCSV(content) {
+  const lines = content.split(/\r?\n/).filter(l => l.trim() !== "");
+  headers = lines[0].split(",").map(h => h.trim());
+  return lines.slice(1).map((line, i) => {
+    const values = line.split(",").map(v => v.trim());
+    const obj = {};
+    headers.forEach((h, idx) => obj[h] = values[idx] || "");
+    return obj;
+  });
+}
+
+// Process CSV
+function processCSV() {
+  const file = document.getElementById("csvFile").files[0];
+  if (!file) return alert("Upload a CSV file.");
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    originalData = parseCSV(e.target.result);
+    identifyIssues();
+  };
+  reader.readAsText(file);
+}
+
+// Identify issues with row numbers and column names
+function identifyIssues() {
+  let missingIssues = [];
+  let invalidIssues = [];
+  let validationIssues = [];
+
+  originalData.forEach((row, idx) => {
+    const rowNum = idx + 2; // +2 for header + zero-index
+
+    // Missing Values
+    for (let col of headers) {
+      if (row[col] === "") missingIssues.push(`Row ${rowNum}, Column "${col}"`);
+    }
+
+    // Invalid characters
+    for (let col of headers) {
+      if (/[^a-zA-Z0-9 .@_-]/.test(row[col])) invalidIssues.push(`Row ${rowNum}, Column "${col}"`);
+    }
+
+    // Validation Example: Price > 0
+    if ("Price" in row) {
+      const val = parseFloat(row["Price"]);
+      if (isNaN(val) || val <= 0) validationIssues.push(`Row ${rowNum}, Column "Price"`);
+    }
+  });
+
+  // Show issues
+  const section = document.getElementById("issuesSection");
+  section.innerHTML = `
+    <h3>Detected Issues:</h3>
+    <p><b>Missing Values:</b></p>
+    <ul class="issue-list">${missingIssues.length ? missingIssues.map(i => `<li>${i}</li>`).join("") : "<li>None</li>"}</ul>
+    <p><b>Invalid Entries (special chars):</b></p>
+    <ul class="issue-list">${invalidIssues.length ? invalidIssues.map(i => `<li>${i}</li>`).join("") : "<li>None</li>"}</ul>
+    <p><b>Validation Errors ("Price" <= 0):</b></p>
+    <ul class="issue-list">${validationIssues.length ? validationIssues.map(i => `<li>${i}</li>`).join("") : "<li>None</li>"}</ul>
+    <p>Do you want to automatically remove/fix these rows?</p>
+    <button onclick='confirmCleaning(${JSON.stringify(missingIssues)}, ${JSON.stringify(invalidIssues)}, ${JSON.stringify(validationIssues)})'>Yes, Clean CSV</button>
+  `;
+  section.classList.remove("hidden");
+}
+
+// Clean CSV
+function confirmCleaning(missing, invalid, validation) {
+  const rowsToRemove = new Set();
+
+  // Extract row numbers from issues
+  function extractRows(issueArray) {
+    issueArray.forEach(i => {
+      const match = i.match(/Row (\d+),/);
+      if (match) rowsToRemove.add(parseInt(match[1]));
+    });
+  }
+
+  extractRows(missing);
+  extractRows(invalid);
+  extractRows(validation);
+
+  cleanData = originalData.filter((row, idx) => !rowsToRemove.has(idx + 2));
+
+  // Clean remaining data: trim & remove special chars
+  cleanData = cleanData.map(row => {
+    const newRow = {};
+    for (let h of headers) {
+      newRow[h] = row[h].replace(/[^a-zA-Z0-9 .@_-]/g, "").trim();
+    }
+    return newRow;
+  });
+
+  alert(`Cleaning completed. ${rowsToRemove.size} rows removed.`);
+  document.getElementById("downloadBtn").classList.remove("hidden");
+}
+
+// Download CSV
+function downloadCleanCSV() {
+  let csv = headers.join(",") + "\n";
+  cleanData.forEach(row => {
+    csv += headers.map(h => row[h]).join(",") + "\n";
+  });
+
+  const blob = new Blob([csv], {type: "text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cleaned_data.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+</script>
+
+</body>
+</html>

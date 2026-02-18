@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Job Search</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0 0 3rem 0;
+  background-color: #f9f9f9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+/* SAME CONTAINER STYLE */
+.container {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  max-width: 400px;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-weight: 600;
+  color: #1A1A1A;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+/* TOGGLE */
+.toggle-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.toggle-btns {
+  display: flex;
+  border-radius: 30px;
+  background-color: #E8EEFF;
+  overflow: hidden;
+}
+
+.toggle-btns button {
+  padding: 0.5rem 2rem;
+  border: none;
+  background: transparent;
+  color: #3B6EFF;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-btns button.active {
+  background: #3B6EFF;
+  color: white;
+}
+
+/* FORM FIELDS */
+.field {
+  margin-bottom: 1rem;
+}
+
+label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6A6A6A;
+}
+
+input[type="text"],
+input[type="number"] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.radio-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  background-color: #F5F7FF;
+  padding: 0.5rem 0.8rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+input[type="radio"] {
+  margin-right: 0.4rem;
+}
+
+.custom-time {
+  grid-column: span 2;
+}
+
+.custom-time input[type="number"] {
+  width: 60px;
+  margin-left: 0.4rem;
+  padding: 0.3rem;
+}
+
+/* BUTTON SAME STYLE */
+button[type="submit"] {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #3B6EFF;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: opacity 0.3s;
+  margin-top: 0.5rem;
+}
+
+button[type="submit"]:hover {
+  opacity: 0.9;
+}
+
+/* FOOTER */
+.footer {
+  font-size: 0.8rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.footer img {
+  width: 18px;
+  height: 18px;
+}
+</style>
+</head>
+
+<body oncontextmenu="return false;">
+
+<div class="container">
+  <h2>Job Search</h2>
+
+  <div class="toggle-wrapper">
+    <div class="toggle-btns">
+      <button id="linkedinBtn" class="active" onclick="showForm('linkedin')">LinkedIn</button>
+      <button id="naukriBtn" onclick="showForm('naukri')">Naukri</button>
+    </div>
+  </div>
+
+  <!-- LinkedIn Form -->
+  <form id="linkedinForm" onsubmit="event.preventDefault(); searchLinkedInJobs();">
+    <div class="field">
+      <label>Role</label>
+      <input type="text" id="linkedin-role" placeholder="e.g. Data Engineer" />
+    </div>
+
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="linkedin-location" placeholder="e.g. New York" />
+    </div>
+
+    <div class="field">
+      <label>Posted Within</label>
+      <div class="radio-group">
+        <label><input type="radio" name="linkedin-tpr" value="1800" />30 Mins</label>
+        <label><input type="radio" name="linkedin-tpr" value="3600" />1 Hour</label>
+        <label><input type="radio" name="linkedin-tpr" value="7200" />2 Hours</label>
+        <label><input type="radio" name="linkedin-tpr" value="14400" />4 Hours</label>
+        <label class="custom-time">
+          <input type="radio" name="linkedin-tpr" value="custom" />
+          Custom:
+          <input type="number" id="linkedin-custom-hours" placeholder="Hrs" min="1" />
+        </label>
+      </div>
+    </div>
+
+    <button type="submit">Search Jobs</button>
+  </form>
+
+  <!-- Naukri Form -->
+  <form id="naukriForm" style="display:none;" onsubmit="event.preventDefault(); searchNaukriJobs();">
+    <div class="field">
+      <label>Role</label>
+      <input type="text" id="naukri-role" placeholder="e.g. Data Engineer" />
+    </div>
+
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="naukri-location" placeholder="e.g. New York" />
+    </div>
+
+    <div class="field">
+      <label>Posted Within</label>
+      <div class="radio-group">
+        <label><input type="radio" name="naukri-age" value="1" />1 Day</label>
+        <label><input type="radio" name="naukri-age" value="2" />2 Days</label>
+        <label><input type="radio" name="naukri-age" value="3" />3 Days</label>
+        <label><input type="radio" name="naukri-age" value="4" />4 Days</label>
+        <label class="custom-time">
+          <input type="radio" name="naukri-age" value="custom" />
+          Custom:
+          <input type="number" id="naukri-custom-days" placeholder="days" min="1" />
+        </label>
+      </div>
+    </div>
+
+    <button type="submit">Search Jobs</button>
+  </form>
+</div>
+
+<div class="footer">
+  Made with 
+  <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt="heart" />
+  by Gadepalli Saipriyank
+</div>
+
+<script>
+function showForm(platform) {
+  document.getElementById('linkedinForm').style.display = platform === 'linkedin' ? 'block' : 'none';
+  document.getElementById('naukriForm').style.display = platform === 'naukri' ? 'block' : 'none';
+  document.getElementById('linkedinBtn').classList.toggle('active', platform === 'linkedin');
+  document.getElementById('naukriBtn').classList.toggle('active', platform === 'naukri');
+}
+
+function searchLinkedInJobs() {
+  const role = document.getElementById('linkedin-role').value.trim();
+  const location = document.getElementById('linkedin-location').value.trim();
+  if (!role || !location) return alert('Please enter Role and Location.');
+  const selectedRadio = document.querySelector('input[name="linkedin-tpr"]:checked');
+  if (!selectedRadio) return alert('Please select a "Posted Within" time.');
+  let tprValue = selectedRadio.value;
+  if (tprValue === 'custom') {
+    const customHours = parseFloat(document.getElementById('linkedin-custom-hours').value);
+    if (!isNaN(customHours) && customHours > 0) {
+      tprValue = (customHours * 3600).toString();
+    } else return alert('Enter valid custom hours.');
+  }
+  let url = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(role)}&location=${encodeURIComponent(location)}&f_TPR=r${tprValue}`;
+  window.open(url, '_blank');
+}
+
+function searchNaukriJobs() {
+  const role = document.getElementById('naukri-role').value.trim();
+  const location = document.getElementById('naukri-location').value.trim();
+  if (!role || !location) return alert('Please enter Role and Location.');
+  const selectedRadio = document.querySelector('input[name="naukri-age"]:checked');
+  if (!selectedRadio) return alert('Please select a "Posted Within" time.');
+  let ageValue = selectedRadio.value;
+  if (ageValue === 'custom') {
+    const customDays = parseInt(document.getElementById('naukri-custom-days').value);
+    if (!isNaN(customDays) && customDays > 0) {
+      ageValue = customDays.toString();
+    } else return alert('Enter valid custom days.');
+  }
+  let url = `https://www.naukri.com/${encodeURIComponent(role)}-jobs-in-${encodeURIComponent(location)}?k=${encodeURIComponent(role)}&l=${encodeURIComponent(location)}&jobAge=${ageValue}`;
+  window.open(url, '_blank');
+}
+
+
+</script>
+
+</body>
+</html>

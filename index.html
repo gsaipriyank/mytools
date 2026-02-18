@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Tools</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    padding: 0 0 3rem 0;
+    background-color: #f4f6fa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    max-width: 600px;
+    width: 100%;
+    margin-top: 40px;
+  }
+
+  h2 {
+    font-weight: 600;
+    color: #3B6EFF;
+    margin-bottom: 2rem;
+    font-size: 1.6rem;
+    text-align: center;
+  }
+
+  /* ===== Main Section Card ===== */
+  .section {
+    border-radius: 12px;
+    background: #f4f6fa;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    padding: 1rem 1rem;
+    transition: all 0.25s ease;
+    border: 2px solid transparent;
+  }
+
+  .section:hover {
+    background: #ffffff;
+    border: 2px solid #3B6EFF;
+    box-shadow: 0 0 0 4px rgba(59, 110, 255, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #222;
+  }
+
+  /* ===== Sub Tools ===== */
+  .subtools {
+    margin-top: 0.8rem;
+    margin-left: 1rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.4s ease;
+    opacity: 0;
+  }
+
+  .subtools.show {
+    max-height: 1000px; /* Large enough to fit all children */
+    opacity: 1;
+  }
+
+  .tool {
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    background: #eef2ff;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    border: 2px solid transparent;
+  }
+
+  .tool:hover {
+    background: #ffffff;
+    border: 2px solid #3B6EFF;
+    box-shadow: 0 0 0 4px rgba(59, 110, 255, 0.12);
+    transform: translateY(-1px);
+  }
+
+  .tool-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #222;
+  }
+
+  .tool-desc {
+    font-size: 0.8rem;
+    color: #6A6A6A;
+    margin-top: 2px;
+  }
+
+  .footer {
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #6A6A6A;
+  }
+
+  .footer img {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>My Tools</h2>
+
+  <!-- ================= JOB SEARCH TOOLS ================= -->
+  <div class="section" onclick="toggleSection('jobSearchTools')">
+    <div class="section-title">💼 Job Search Tools</div>
+    <div class="subtools" id="jobSearchTools">
+      <div class="tool" onclick="openPage('job_search.html')">
+        <div class="tool-title">🔎 Job Search</div>
+        <div class="tool-desc">Search and explore jobs on Naukri and LinkedIn easily.</div>
+      </div>
+      <div class="tool" onclick="openPage('advanced_linkedin.html')">
+        <div class="tool-title">🔗 Advanced LinkedIn Search</div>
+        <div class="tool-desc">Powerful LinkedIn search to find job posts.</div>
+      </div>
+      <div class="tool" onclick="openPage('ats_checker.html')">
+        <div class="tool-title">📄 ATS Score Checker</div>
+        <div class="tool-desc">Analyze resumes with keyword & ATS scoring.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DATA ENGINEERING ================= -->
+  <div class="section" onclick="toggleSection('dataEngineering')">
+    <div class="section-title">📊 Data Engineering</div>
+    <div class="subtools" id="dataEngineering">
+      <div class="tool" onclick="openPage('sql_joins.html')">
+        <div class="tool-title">🗄 SQL Join Simulator</div>
+        <div class="tool-desc">Interactive visual explanation of SQL joins.</div>
+      </div>
+      <div class="tool" onclick="openPage('data_cleansing.html')">
+        <div class="tool-title">🧹 Data Cleansing</div>
+        <div class="tool-desc">Clean, transform and validate datasets.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= UTILITY ================= -->
+  <div class="section" onclick="toggleSection('utilityTools')">
+    <div class="section-title">⚙ Utility</div>
+    <div class="subtools" id="utilityTools">
+      <div class="tool" onclick="openPage('charging_session.html')">
+        <div class="tool-title">⚡ Charging Session</div>
+        <div class="tool-desc">Track and monitor your smartphone charging sessions.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  Made with 
+  <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt="heart" />
+  by Gadepalli Saipriyank
+</div>
+
+<script>
+function openPage(page) {
+  window.location.href = page;
+}
+
+/* ===== Toggle Subtools ===== */
+function toggleSection(id) {
+  const section = document.getElementById(id);
+  section.classList.toggle('show');
+}
+
+</script>
+
+</body>
+</html>

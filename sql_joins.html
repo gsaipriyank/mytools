@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Joins Simulator</title>
+
+<style>
+  * {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  body {
+    margin: 0;
+    padding: 0 0 3rem 0; /* bottom padding for footer */
+    background-color: #f9f9f9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+
+  .container {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    max-width: 600px;
+    width: 100%;
+    text-align: left;
+    transform: scale(1);
+    transform-origin: top center;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-weight: 600;
+    color: #1A1A1A;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .label {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6A6A6A;
+    text-transform: uppercase;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 1rem;
+    margin-top: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+
+  button {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #3B6EFF;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #2a4fd6;
+  }
+
+  .output {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #E8EEFF;
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #222;
+  }
+
+  details {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #f0f4ff;
+    border-radius: 8px;
+  }
+
+  summary {
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .footer {
+    font-size: 0.85rem;
+    color: #888;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>SQL Joins Simulator</h2>
+
+  <div class="label">Table 1 Values (comma-separated)</div>
+  <input type="text" id="table1" placeholder="Example: 1,1,2,3,3,5">
+
+  <div class="label">Table 2 Values (comma-separated)</div>
+  <input type="text" id="table2" placeholder="Example: 1,2,3,4,5">
+
+  <button onclick="calculateJoins()">Compute Joins</button>
+
+  <div class="output" id="output">Results will appear here...</div>
+</div>
+
+<div class="footer">Made with ❤️ by Gadepalli Saipriyank</div>
+
+<script>
+function calculateJoins() {
+  const t1 = document.getElementById('table1').value.split(',').map(v => v.trim()).filter(v => v !== '');
+  const t2 = document.getElementById('table2').value.split(',').map(v => v.trim()).filter(v => v !== '');
+
+  let inner = [];
+  let left = [];
+  let right = [];
+  let full = [];
+  let cross = [];
+
+  // Inner Join (count duplicates correctly)
+  t1.forEach(v1 => {
+    t2.forEach(v2 => {
+      if (v1 === v2) inner.push(`(${v1}, ${v2})`);
+    });
+  });
+
+  // Left Join
+  t1.forEach(v1 => {
+    let match = false;
+    t2.forEach(v2 => {
+      if (v1 === v2) {
+        left.push(`(${v1}, ${v2})`);
+        match = true;
+      }
+    });
+    if (!match) left.push(`(${v1}, NULL)`);
+  });
+
+  // Right Join
+  t2.forEach(v2 => {
+    let match = false;
+    t1.forEach(v1 => {
+      if (v1 === v2) {
+        right.push(`(${v1}, ${v2})`);
+        match = true;
+      }
+    });
+    if (!match) right.push(`(NULL, ${v2})`);
+  });
+
+  // Full Outer Join
+  let usedT2 = [];
+  t1.forEach(v1 => {
+    let matchFound = false;
+    t2.forEach((v2, idx) => {
+      if (v1 === v2) {
+        full.push(`(${v1}, ${v2})`);
+        matchFound = true;
+        usedT2[idx] = true;
+      }
+    });
+    if (!matchFound) full.push(`(${v1}, NULL)`);
+  });
+  t2.forEach((v2, idx) => {
+    if (!usedT2[idx]) full.push(`(NULL, ${v2})`);
+  });
+
+  // Cross Join
+  t1.forEach(v1 => {
+    t2.forEach(v2 => {
+      cross.push(`(${v1}, ${v2})`);
+    });
+  });
+
+  document.getElementById('output').innerHTML = `
+<b>Inner Join Count:</b> ${inner.length}
+<details><summary>Show Inner Join Values</summary>${inner.join(', ')}</details>
+
+<b>Left Join Count:</b> ${left.length}
+<details><summary>Show Left Join Values</summary>${left.join(', ')}</details>
+
+<b>Right Join Count:</b> ${right.length}
+<details><summary>Show Right Join Values</summary>${right.join(', ')}</details>
+
+<b>Full Outer Join Count:</b> ${full.length}
+<details><summary>Show Full Outer Join Values</summary>${full.join(', ')}</details>
+
+<b>Cross Join Count:</b> ${cross.length}
+<details><summary>Show Cross Join Values</summary>${cross.join(', ')}</details>
+  `;
+}
+
+
+</script>
+
+</body>
+</html>

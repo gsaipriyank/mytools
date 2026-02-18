@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATS Resume Score Checker</title>
+
+<!-- PDF.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<!-- Mammoth.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+
+<style>
+* { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+body { margin:0; padding:2rem 0 4rem 0; background:#f9f9f9; display:flex; flex-direction:column; align-items:center; min-height:100vh;}
+.container { background:#fff; padding:2rem; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); max-width:500px; width:100%; margin-bottom:20px;}
+h2 { text-align:center; margin-bottom:1rem;}
+button { padding:10px 16px; border:none; border-radius:8px; background:#3B6EFF; color:white; cursor:pointer; margin-top:10px;}
+button:hover { opacity:0.9; }
+textarea { width:100%; height:120px; border-radius:10px; border:1px solid #ddd; padding:10px; resize:vertical;}
+input[type="file"] { margin-top:10px; }
+.switch { display:flex; justify-content:space-between; margin-bottom:15px;}
+.switch button { width:48%; background:#E8EEFF; color:#3B6EFF; }
+.switch button.active { background:#3B6EFF; color:white; }
+.hidden { display:none;}
+.result { margin-top:20px; }
+.progress-circle { width:120px; height:120px; border-radius:50%; background:conic-gradient(#3B6EFF 0%, #E8EEFF 0%); display:flex; align-items:center; justify-content:center; margin:20px auto;}
+.progress-inner { width:90px; height:90px; border-radius:50%; background:white; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:bold;}
+.section-title { margin-top:15px; font-weight:600; }
+ul { padding-left:18px; }
+.footer { margin-top:1rem; color:#777; font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; }
+.footer img { width:18px; height:18px; vertical-align:middle; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2>ATS Resume Score Checker</h2>
+
+  <div class="switch">
+    <button id="modeKeyword" class="active">Keyword Match</button>
+    <button id="modeATS">ATS Checklist</button>
+  </div>
+
+  <div id="keywordSection">
+    <label>Paste Job Description</label>
+    <textarea id="jobDesc"></textarea>
+  </div>
+
+  <div>
+    <label>Upload Resume (PDF or DOCX)</label>
+    <input type="file" id="resumeFile" accept=".pdf,.docx">
+  </div>
+
+  <button onclick="analyzeResume()">Analyze Resume</button>
+
+  <div class="result hidden" id="resultBox">
+    <div class="progress-circle" id="progressCircle">
+      <div class="progress-inner" id="scoreText">0%</div>
+    </div>
+
+    <div class="section-title">Keyword Breakdown</div>
+    <div id="keywordBreakdown"></div>
+
+    <div class="section-title">Missing Keywords</div>
+    <ul id="missingKeywords"></ul>
+
+    <div class="section-title">Detected Sections</div>
+    <ul id="sectionsDetected"></ul>
+
+    <div class="section-title">Resume Length</div>
+    <div id="resumeLength"></div>
+
+    <div class="section-title">Suggestions</div>
+    <ul id="suggestions"></ul>
+  </div>
+</div>
+
+<div class="footer">
+  Made with 
+  <img src="https://cdn-icons-png.flaticon.com/512/833/833472.png" alt="heart" />
+  by Gadepalli Saipriyank
+</div>
+
+<script>
+let currentMode = "keyword";
+let resumeText = "";
+let finalScore = 0;
+
+// Toggle Modes
+document.getElementById("modeKeyword").onclick = () => {
+  currentMode = "keyword";
+  document.getElementById("modeKeyword").classList.add("active");
+  document.getElementById("modeATS").classList.remove("active");
+  document.getElementById("keywordSection").classList.remove("hidden");
+};
+document.getElementById("modeATS").onclick = () => {
+  currentMode = "ats";
+  document.getElementById("modeATS").classList.add("active");
+  document.getElementById("modeKeyword").classList.remove("active");
+  document.getElementById("keywordSection").classList.add("hidden");
+};
+
+// Extract text from PDF or DOCX
+async function extractText(file) {
+  if(file.type==="application/pdf"){
+    const reader = new FileReader();
+    return new Promise(resolve=>{
+      reader.onload=async function(){
+        const typedarray=new Uint8Array(this.result);
+        const pdf=await pdfjsLib.getDocument(typedarray).promise;
+        let text="";
+        for(let i=1;i<=pdf.numPages;i++){
+          const page=await pdf.getPage(i);
+          const content=await page.getTextContent();
+          content.items.forEach(item=>text+=item.str+" ");
+        }
+        resolve(text.toLowerCase());
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  } else {
+    const reader = new FileReader();
+    return new Promise(resolve=>{
+      reader.onload=async function(e){
+        const result = await mammoth.extractRawText({arrayBuffer:e.target.result});
+        resolve(result.value.toLowerCase());
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+}
+
+// Extract keywords from text
+function extractKeywords(text){
+  return [...new Set(
+    text.toLowerCase().replace(/[^\w\s]/g,'').split(/\s+/).filter(w=>w.length>3)
+  )];
+}
+
+// Animate circular score
+function animateScore(score){
+  score=Math.max(0,Math.min(Math.round(score),100));
+  const circle=document.getElementById("progressCircle");
+  const text=document.getElementById("scoreText");
+  let current=0;
+  const interval=setInterval(()=>{
+    if(current>=score){current=score; clearInterval(interval);}
+    text.innerText=current+"%";
+    circle.style.background=`conic-gradient(#3B6EFF ${current}%, #E8EEFF ${current}%)`;
+    current++;
+  },15);
+}
+
+// Smart ATS Checklist Analysis
+function analyzeATSChecklist(){
+  let score=0;
+  let sections=[];
+  let suggestions=[];
+
+  const sectionWeights = {
+    "summary": 10,
+    "experience": 15,
+    "education": 15,
+    "skills": 15,
+    "projects": 10,
+    "certifications": 10,
+    "contact": 5
+  };
+
+  // Detect sections smartly
+  for(let key in sectionWeights){
+    if(resumeText.includes(key) || (key==="contact" && (resumeText.match(/\S+@\S+\.\S+/)||resumeText.match(/\+?\d[\d\s-]{7,}/)))){
+      score += sectionWeights[key];
+      sections.push(key.charAt(0).toUpperCase() + key.slice(1));
+    } else {
+      suggestions.push("Add " + key + " section.");
+    }
+  }
+
+  // Resume length message
+  let lenMsg="Ideal";
+  if(resumeText.length<500) lenMsg="Short";
+  else if(resumeText.length>2500) lenMsg="Too Long";
+
+  document.getElementById("resumeLength").innerText = lenMsg;
+
+  // Formatting penalty
+  const messyLines = resumeText.split(/\n/).filter(l=>l.trim()==="").length;
+  if(messyLines>10) { score-=5; suggestions.push("Clean excessive blank lines."); }
+
+  // Basic grammar scoring (very simple)
+  const grammarMistakes = (resumeText.match(/(\s+[a-z]+\s+){3,}/g)||[]).length;
+  if(grammarMistakes>5) { score-=5; suggestions.push("Check grammar."); }
+
+  score=Math.max(0, Math.min(score,100));
+  return {score, sections, suggestions};
+}
+
+// Keyword Match
+function analyzeKeywordMatch(jobDesc){
+  const jdKeywords=extractKeywords(jobDesc);
+  let matched=[], missing=[];
+  jdKeywords.forEach(w=>{ resumeText.includes(w)?matched.push(w):missing.push(w); });
+  let score = jdKeywords.length===0?0:Math.round((matched.length/jdKeywords.length)*100);
+  return {score, matched, missing};
+}
+
+// Main Analysis
+async function analyzeResume(){
+  const file=document.getElementById("resumeFile").files[0];
+  if(!file) return alert("Upload resume.");
+  resumeText=await extractText(file);
+
+  let sectionsDetected=[], suggestions=[], missingKeywords=[], keywordBreakdown="";
+  let keywordScore=0, atsScore=0;
+
+  if(currentMode==="keyword"){
+    const jd=document.getElementById("jobDesc").value;
+    if(!jd) return alert("Paste job description.");
+
+    const keywordResult=analyzeKeywordMatch(jd);
+    keywordScore=keywordResult.score;
+    missingKeywords=keywordResult.missing;
+    keywordBreakdown=`Matched: ${keywordResult.matched.length} | Total: ${extractKeywords(jd).length}`;
+
+    const atsResult=analyzeATSChecklist();
+    atsScore=atsResult.score;
+    sectionsDetected=atsResult.sections;
+    suggestions=atsResult.suggestions;
+
+    finalScore=Math.round(keywordScore*0.6 + atsScore*0.4);
+  } else {
+    const atsResult=analyzeATSChecklist();
+    finalScore=atsResult.score;
+    sectionsDetected=atsResult.sections;
+    suggestions=atsResult.suggestions;
+  }
+
+  finalScore=Math.max(0, Math.min(finalScore,100));
+
+  document.getElementById("resultBox").classList.remove("hidden");
+  animateScore(finalScore);
+
+  document.getElementById("keywordBreakdown").innerText=keywordBreakdown;
+
+  const mk=document.getElementById("missingKeywords");
+  mk.innerHTML="";
+  missingKeywords.slice(0,20).forEach(k=>mk.innerHTML+="<li>"+k+"</li>");
+
+  const sd=document.getElementById("sectionsDetected");
+  sd.innerHTML="";
+  sectionsDetected.forEach(s=>sd.innerHTML+="<li>"+s+"</li>");
+
+  const sug=document.getElementById("suggestions");
+  sug.innerHTML="";
+  suggestions.forEach(s=>sug.innerHTML+="<li>"+s+"</li>");
+}
+
+
+</script>
+
+</body>
+</html>
